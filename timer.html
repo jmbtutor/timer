@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Timer</title>
+    <style>
+      html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-around;
+        height: 96%;
+        box-sizing: border-box;
+      }
+
+      .output {
+        text-align: center;
+        font-family: Inconsolata, monospace;
+        font-weight: bold;
+      }
+
+      #timer-title {
+        font-size: 5vw;
+      }
+
+      #time-left {
+        font-size: 20vw;
+      }
+
+      .end-output {
+        font-size: 3vw;
+      }
+
+      .now-output {
+        font-size: 1.5vw;
+      }
+
+      .input {
+        justify-self: end;
+      }
+
+      .input input[type="number"] {
+        width: 3em;
+      }
+
+      body.invert {
+        background-color: black;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="output">
+      <h2 id="timer-title"></h2>
+      <div><output id="time-left">00:00:00</output></div>
+      <div class="end-output">End: <output id="end-output"></output></div>
+      <div class="now-output">Now: <output id="now-output"></output></div>
+    </div>
+    <div class="input">
+      <input type="text" id="title" placeholder="Title">
+      <input type="number" value="1" size="2" id="hours" min="0">:<input type="number" value="30" id="minutes" min="0">:<input type="number" value="0" id="seconds" min="0">
+      <button id="start">Start</button>
+      <button id="pause">Pause</button>
+      <button id="resume">Resume</button>
+      <button id="clear">Clear</button>
+    </div>
+
+  <script>
+    class Timer {
+      constructor(hours, minutes, seconds, output, endOutput, onend) {
+        const start = this.start = this.pauseTime = Date.now();
+        const end = this.end = start + hours * 60*60*1000 + minutes * 60*1000 + seconds * 1000;
+        this.output = output;
+        this.endOutput = endOutput;
+        this.onend = onend;
+      }
+
+      tick() {
+        const now = Date.now();
+        const left = this.end - now;
+        if (left <= 0) return this.onend();
+        this.output.textContent = new Date(this.end - now).toUTCString().match(/\d\d:\d\d:\d\d/);
+        this.endOutput.textContent = new Date(this.end).toLocaleString();
+        const next = new Date();
+        next.setUTCSeconds(next.getUTCSeconds() + 1);
+        return this.timeout = setTimeout(this.tick.bind(this), next.getTime() - now);
+      }
+
+      pause() {
+        this.clear();
+        this.pauseTime = Date.now();
+      }
+
+      resume() {
+        if (this.timeout != null) return;
+        this.end += Date.now() - this.pauseTime;
+        this.tick();
+      }
+
+      clear() {
+        clearTimeout(this.timeout);
+        this.timeout = null;
+      }
+    }
+
+    let timer;
+    let nowTimeout;
+
+    {
+      const title = document.getElementById("timer-title");
+      const titleInput = document.getElementById("title");
+      const nowOutput = document.getElementById("now-output");
+      const hoursElement = document.getElementById("hours");
+      const minutesElement = document.getElementById("minutes");
+      const secondsElement = document.getElementById("seconds");
+      const outputElement = document.getElementById("time-left");
+      const endOutputElement = document.getElementById("end-output");
+
+      title.innerText = titleInput.value;
+      titleInput.addEventListener("input", (event) => {
+        title.innerText = event.target.value;
+      });
+
+      function updateNow() {
+        const next = new Date();
+        const now = new Date();
+        next.setUTCSeconds(next.getUTCSeconds() + 1);
+        nowOutput.textContent = now.toLocaleString();
+        return nowTimeout = setTimeout(updateNow, next.getTime() - now.getTime());
+      }
+
+      nowTimeout = updateNow();
+
+      function invert() {
+        document.body.classList.add("invert");
+      }
+
+      function normal() {
+        document.body.classList.remove("invert");
+      }
+
+      function flash() {
+        invert();
+        setTimeout(normal, 500);
+        setTimeout(invert, 1000);
+        setTimeout(normal, 1500);
+      }
+
+      document.getElementById("start").addEventListener("click", () => {
+        const hours = hoursElement.value || 0;
+        const minutes = minutesElement.value || 0;
+        const seconds = secondsElement.value || 0;
+        const output = outputElement;
+        const endOutput = endOutputElement;
+
+        if (typeof timer !== "undefined") timer.pause();
+        timer = new Timer(hours, minutes, seconds, output, endOutput, flash);
+        timer.tick();
+      });
+
+      document.getElementById("pause").addEventListener("click", () => {
+        if (typeof timer !== "undefined") timer.pause();
+      });
+
+      document.getElementById("resume").addEventListener("click", () => {
+        if (typeof timer !== "undefined") timer.resume();
+      });
+
+      document.getElementById("clear").addEventListener("click", () => {
+        if (typeof timer === "undefined") return;
+        timer.clear();
+        outputElement.textContent = "00:00:00";
+        endOutputElement.textContent = "";
+      });
+    }
+  </script>
+  </body>
+</html>
