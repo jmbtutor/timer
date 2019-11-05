@@ -88,8 +88,8 @@
         this.output.textContent = new Date(this.end - now).toUTCString().match(/\d\d:\d\d:\d\d/);
         this.endOutput.textContent = new Date(this.end).toLocaleString();
         const next = new Date();
-        next.setUTCSeconds(next.getUTCSeconds() + 1);
-        return this.timeout = setTimeout(this.tick.bind(this), next.getTime() - now);
+        next.setUTCMilliseconds(next.getUTCMilliseconds() + 1);
+        return this.timeout = setTimeout(this.tick.bind(this), next.getTime() - Date.now());
       }
 
       pause() {
@@ -129,10 +129,9 @@
 
       function updateNow() {
         const next = new Date();
-        const now = new Date();
-        next.setUTCSeconds(next.getUTCSeconds() + 1);
-        nowOutput.textContent = now.toLocaleString();
-        return nowTimeout = setTimeout(updateNow, next.getTime() - now.getTime());
+        next.setUTCMilliseconds(next.getUTCMilliseconds() + 500);
+        nowOutput.textContent = (new Date()).toLocaleString();
+        return nowTimeout = setTimeout(updateNow, next.getTime() - Date.now());
       }
 
       nowTimeout = updateNow();
