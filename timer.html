@@ -74,19 +74,23 @@
   <script>
     class Timer {
       constructor(hours, minutes, seconds, output, endOutput, onend) {
-        const start = this.start = this.pauseTime = Date.now();
-        const end = this.end = start + hours * 60*60*1000 + minutes * 60*1000 + seconds * 1000;
+        const start = this.startTime = this.pauseTime = Date.now();
+        const end = this.endTime = start + hours * 60*60*1000 + minutes * 60*1000 + seconds * 1000;
         this.output = output;
         this.endOutput = endOutput;
         this.onend = onend;
       }
 
+      start() {
+        this.endOutput.textContent = new Date(this.endTime).toLocaleString();
+        this.tick();
+      }
+
       tick() {
         const now = Date.now();
-        const left = this.end - now;
+        const left = this.endTime - now;
         if (left <= 0) return this.onend();
-        this.output.textContent = new Date(this.end - now).toUTCString().match(/\d\d:\d\d:\d\d/);
-        this.endOutput.textContent = new Date(this.end).toLocaleString();
+        this.output.textContent = new Date(this.endTime - now).toUTCString().match(/\d\d:\d\d:\d\d/);
         const next = new Date();
         next.setUTCMilliseconds(next.getUTCMilliseconds() + 1);
         return this.timeout = setTimeout(this.tick.bind(this), next.getTime() - Date.now());
@@ -99,8 +103,8 @@
 
       resume() {
         if (this.timeout != null) return;
-        this.end += Date.now() - this.pauseTime;
-        this.tick();
+        this.endTime += Date.now() - this.pauseTime;
+        this.start();
       }
 
       clear() {
@@ -162,7 +166,7 @@
 
         if (typeof timer !== "undefined") timer.pause();
         timer = new Timer(hours, minutes, seconds, output, endOutput, flash);
-        timer.tick();
+        timer.start();
       });
 
       document.getElementById("pause").addEventListener("click", () => {
